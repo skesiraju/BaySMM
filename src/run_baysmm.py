@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# author : Santosh Kesiraju
+# author : Santosh
 # e-mail : kcraj2[AT]gmail[DOT]com
 # Date created : 22 Oct 2018
 # Last modified : 22 Oct 2018
@@ -142,20 +142,27 @@ def batch_wise_training(model, optims, dset, config, args):
             optims['Q'].zero_grad()
             optims['T'].zero_grad()
 
-            loss, kld = model.compute_loss(data_dict, use_params='all')
+            if model.config['hyper']['reg_t'] == 'l1':
 
-            loss.backward()
+                loss, kld = model.compute_loss(data_dict, use_params='T_NP')
+
+                loss.backward()
+
+                model.orthant_projection(optims['T'])
+
+                loss += model.t_penalty().data
+
+            else:
+
+                loss += model.t_penalty().data
+
+                optims['T'].step()
+
+            optims['Q'].step()
 
             loss_sum += torch.Tensor(
                 [loss.data.clone(), kld.data.clone()]).to(
                     device=model.device).view(1, -1)
-
-            optims['Q'].step()
-
-            if model.config['hyper']['reg_t'] == 'l1':
-                model.orthant_projection(optims['T'])
-            else:
-                optims['T'].step()
 
             torch.cuda.empty_cache()
 
@@ -348,6 +355,7 @@ def main():
 
     args = parse_arguments()
 
+    attempts = 0
     gpu_id = -1
 
     while True:
@@ -381,11 +389,17 @@ def main():
             torch.cuda.empty_cache()
 
             if re.search(r"CUDA out of memory", str(err)):
-                print("\n" + str(err),
-                      "\nIncreasing the number of batches to", end=" ")
+                print("\n" + str(err), "\nIncreasing the number of batches to", end=" ")
                 args.nb = args.nb + 2
                 print(args.nb)
 
+            # elif re.search(r"CUDA", str(err)):
+            #    print(err)
+            #    print("GPU ID:", gpu_ids[0], "is suddenly busy. Trying another GPU.")
+            #    attempts += 1
+            #    if attempts > 10:
+            #        print("Cannot get a free GPU")
+            #        sys.exit()
             else:
                 print('{0}'.format(str(err)))
                 traceback.print_tb(err.__traceback__)
