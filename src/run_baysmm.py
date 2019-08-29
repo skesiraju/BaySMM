@@ -102,10 +102,7 @@ def create_optimizers(model, config):
     else:
         torch_optim = torch.optim.Adam
 
-    if config['update_ubm']:
-        opt_t = torch_optim([model.T, model.m], lr=config['eta_t'])
-    else:
-        opt_t = torch_optim([model.T], lr=config['eta_t'])
+    opt_t = torch_optim([model.T, model.m], lr=config['eta_t'])
 
     opt_q = torch_optim([model.Q], lr=config['eta_q'])
     optims = {'Q': opt_q, 'T': opt_t}
@@ -142,26 +139,28 @@ def batch_wise_training(model, optims, dset, config, args):
             optims['Q'].zero_grad()
             optims['T'].zero_grad()
 
-            if model.config['hyper']['reg_t'] == 'l1':
+            loss, kld = model.compute_loss(data_dict, use_params='Q')
 
-                loss, kld = model.compute_loss(data_dict, use_params='T_NP')
+            if model.config['hyper']['reg_t'] == 'l1':
 
                 loss.backward()
 
                 model.orthant_projection(optims['T'])
 
-                loss += model.t_penalty().data
+                loss += model.t_penalty().detach().item()
 
             else:
 
-                loss += model.t_penalty().data
+                loss += model.t_penalty()
+
+                loss.backward()
 
                 optims['T'].step()
 
             optims['Q'].step()
 
             loss_sum += torch.Tensor(
-                [loss.data.clone(), kld.data.clone()]).to(
+                [loss.detach().item(), kld.detach().item()]).to(
                     device=model.device).view(1, -1)
 
             torch.cuda.empty_cache()
@@ -478,9 +477,6 @@ def parse_arguments():
                               default='INFO', help='logging level')
     train_parser.add_argument('--batchwise', action='store_true',
                               help='Batch-wise training for large datasets \
-                              (default: %(default)s)')
-    train_parser.add_argument('--update_ubm', action='store_true',
-                              help='Update UBM during training \
                               (default: %(default)s)')
     train_parser.add_argument('--ovr', action='store_true',
                               help='over-write the exp dir \

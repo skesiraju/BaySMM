@@ -56,7 +56,7 @@ class BaySMM(nn.Module):
     def __init_params(self, ubm):
         """ Initialize model parameters. """
 
-        self.m = nn.Parameter(ubm, requires_grad=self.config['update_ubm'])
+        self.m = nn.Parameter(ubm, requires_grad=True)
 
         V = self.config['vocab_size']
         N = self.config['n_docs']
@@ -89,8 +89,8 @@ class BaySMM(nn.Module):
         """
 
         # means and log std.devs for each document, shape = (n_docs x 2*iv_dim)
-        logging.info("Initializing variational posteior to N(0, {%.2f})",
-                     self.config['var_p'])
+        # logging.info("Initializing variational posteior to N(0, %.2f)",
+        #             1./self.config['var_p'])
         q_n = np.repeat([0., -0.5 * np.log(self.config['var_p'])], self.config['hyper']['K'])
         Q = np.tile(q_n, reps=(1, N)).reshape(N, -1).astype(np.float32)
         self.Q = nn.Parameter(torch.from_numpy(Q), requires_grad=True)
@@ -294,7 +294,7 @@ class BaySMM(nn.Module):
         return loss
 
     def orthant_projection(self, opt_t):
-        """ Apply orthant projection while updating bases T.
+        """ Apply orthant projection while updating T matrix.
         Only in case of L1 regularization.
 
         Args:
@@ -306,7 +306,7 @@ class BaySMM(nn.Module):
 
         if diff_pts.nelement() == 0:
 
-            logging.warning("All the co-ordinates in bases `T` are zeros. \
+            logging.warning("All the co-ordinates in matrix `T` are zeros. \
                             There are no differentialbe points. This can happen \
                             if you have used very strong \
                             regularization `lam_t = %f` %s", self.lam_t.item(),
@@ -356,7 +356,7 @@ class BaySMM(nn.Module):
         del t_old_sign, t_new_sign
 
     def update_bases(self, opt_t, data_dict):
-        """ Updata bases matrix """
+        """ Update bases matrix """
 
         opt_t.zero_grad()   # clear previous gradients
 
