@@ -14,6 +14,8 @@
 * scikit-learn >= 0.21.2
 * h5py >= 2.9.0
 
+* See [INSTALL.md](INSATLL.md) for detailed instructions.
+
 ## Data preparation - sample from 20Newsgroups
 
 ```python src/create_sample_data.py.py sample_data/```
@@ -62,7 +64,7 @@ an automatically created sub-directory: `exp/s_1.00_rp_1_lw_1e+01_l1_1e-03_50_ad
 ## Training and testing the classifier
 
 * Three classifiers can be trained on these embeddings.
-* Use `--final` option to train and test classifier on the final embeddings.
+* Use `--final` option to train and test classifier on embeddings from the final iteration.
 
 1. Gaussian linear classifier - uses only the mean parameter
 
