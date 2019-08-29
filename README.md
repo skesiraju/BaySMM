@@ -40,8 +40,7 @@ an automatically created sub-directory: `exp/s_1.00_rp_1_lw_1e+01_l1_1e-03_50_ad
         -trn 1000 \
         -lw 1e+01 \
         -var_p 1e+01 \
-        -lt 1e-03 \
-        --update_ubm
+        -lt 1e-03
     ```
 
 * ELBO and KLD for every iteration, log file, etc are saved in the sub-directory.
