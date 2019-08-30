@@ -14,7 +14,7 @@
 * scikit-learn >= 0.21.2
 * h5py >= 2.9.0
 
-* See [INSTALL.md](INSATLL.md) for detailed instructions.
+* See [INSTALL.md](INSTALL.md) for detailed instructions.
 
 ## Data preparation - sample from 20Newsgroups
 
