@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# cSpell: disable
 
-# author : Santosh Kesiraju
+# author : Santosh
 # e-mail : kcraj2[AT]gmail[DOT]com
 # Date created : 30 Nov 2017
 # Last modified : 30 Nov 2017
@@ -10,7 +11,9 @@
 Gaussian linear classifier
 """
 
+import os
 import sys
+import argparse
 import numpy as np
 import numexpr as ne
 
@@ -36,7 +39,7 @@ class GLC:
 
         Parameters:
         -----------
-        est_prior_type (bool): Estimate from training data or uniform
+            est_prior_type (bool): Estimate from training data or uniform
         """
 
         self.est_prior = est_prior
@@ -82,7 +85,7 @@ class GLC:
             print("Exiting..")
             sys.exit()
 
-    def __compute_wk_and_wk0(self, class_mus, scov, priors):
+    def __compute_wk_and_wk0(self, class_mus, scov, log_priors):
         """ Return W_k which is a matrix, where every row corresponds to w_k
         for a particular class. Compute W_k0 which is a vector, where every
         element corresponds to w_k0 for a particular class """
@@ -96,21 +99,15 @@ class GLC:
         for k in range(noc):
             mu_k = class_mus[k].reshape(-1, 1)
             # self.w_k[k, :] = s_inv.dot(mu_k).reshape(dim)
-            self.w_k0[k] = (-0.5 * (mu_k.T.dot(s_inv).dot(mu_k))) + priors[k]
+            self.w_k0[k] = (-0.5 * (mu_k.T.dot(s_inv).dot(mu_k))) + log_priors[k]
 
-
-    # @profile
     def train(self, data, labels):
         """ Train Gaussian linear classifier
 
         Parameters:
         -----------
-        data (numpy.ndarray): row = data points, cols = dimension
-        labels (numpy.ndarray): vector of labels
-
-        Returns:
-        --------
-        Nothing
+            data (numpy.ndarray): row = data points, cols = dimension
+            labels (numpy.ndarray): vector of labels
         """
 
         class_mus, scov, class_sizes = self.compute_cmus_scov(data, labels)
@@ -118,13 +115,13 @@ class GLC:
 
         if self.est_prior:
             # print('Using class priors.')
-            priors = class_sizes / class_sizes.sum()
+            log_priors = np.log(class_sizes / class_sizes.sum())
         else:
             # print('Uniform class priors.')
-            priors = np.ones(shape=(noc, 1)) / noc
+            log_priors = np.log(np.ones(shape=(noc, 1)) / noc)
 
         # compute W_k (matrix), W_k0 (vector)
-        self.__compute_wk_and_wk0(class_mus, scov, priors)
+        self.__compute_wk_and_wk0(class_mus, scov, log_priors)
 
         # log posteriors
         self.log_post = self.w_k.dot(data.T).T
@@ -137,16 +134,16 @@ class GLC:
         # do the inverse label map
         return [self.label_map[i] for i in y_tmp]
 
-    def predict(self, test, return_probs=False):
+    def predict(self, test):
         """ Predict the class labels for the test data
 
         Parameters:
         -----------
-        test (numpy.ndarray): rows = data points, cols = dimension
+            test (numpy.ndarray): rows = data points, cols = dimension
 
         Returns:
         --------
-        prediction (numpy.ndarray): vector of predictions (labels)
+            prediction (numpy.ndarray): vector of predictions (labels)
         """
 
         self.__check_test_data(test)
@@ -176,14 +173,31 @@ class GLC:
 
         y_p = test.dot(self.w_k.T) + self.w_k0
 
-        if return_probs:
-            y_p = y_p.T
-            y_p -= logsumexp(y_p)
-            np.exp(y_p, out=y_p)
-            y_p = y_p.T
-        else:
-            y_tmp = np.argmax(y_p, axis=1)
-            # do the inverse label map
-            y_p = [self.label_map[i] for i in y_tmp]
+        y_tmp = np.argmax(y_p, axis=1)
+        # do the inverse label map
+        y_p = [self.label_map[i] for i in y_tmp]
+
+        return y_p
+
+    def predict_proba(self, test):
+        """ Predict the posterior probabilities of class labels for the test data
+
+        Parameters:
+        -----------
+            test (numpy.ndarray): rows = data points, cols = dimension
+
+        Returns:
+        --------
+            prediction (numpy.ndarray): Posterior probabilites of class
+        """
+
+        self.__check_test_data(test)
+
+        y_p = test.dot(self.w_k.T) + self.w_k0
+
+        y_p = y_p.T
+        y_p -= logsumexp(y_p)
+        np.exp(y_p, out=y_p)
+        y_p = y_p.T
 
         return y_p
