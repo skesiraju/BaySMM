@@ -5,10 +5,12 @@
 * Gaussian linear classifier exploiting the uncertainties in document embeddings.
 * See paper <http://arxiv.org/abs/1908.07599>
 
+`S. Kesiraju, O. Plchot, L. Burget and S. V. Gangashetty, "Learning Document Embeddings Along With Their Uncertainties," in IEEE/ACM Transactions on Audio, Speech, and Language Processing, vol. 28, pp. 2319-2332, 2020, doi: 10.1109/TASLP.2020.3012062.`
+
 ## Requirements
 
 * Python >= 3.7
-* PyTorch >= 1.1
+* PyTorch >= 1.1 <=1.4
 * scipy >= 1.3
 * numpy >= 1.16.4
 * scikit-learn >= 0.21.2
@@ -78,3 +80,16 @@ an automatically created sub-directory: `exp/s_1.00_rp_1_lw_1e+01_l1_1e-03_50_ad
     ```python src/train_and_clf_cv.py exp/s_1.00_rp_1_lw_1e+01_l1_1e-03_50_adam/ivecs/train_model_T1000_e1000.h5 sample_data/train.labels glcu```
 
 * All the results and predicted classes are saved in `exp/*/results/`
+
+## Citation
+```
+@ARTICLE{Kesiraju:2020:BaySMM,
+  author={Kesiraju, Santosh and Plchot, Oldřich and Burget, Lukáš and Gangashetty, Suryakanth V.},
+  journal={IEEE/ACM Transactions on Audio, Speech, and Language Processing}, 
+  title={Learning Document Embeddings Along With Their Uncertainties}, 
+  year={2020},
+  volume={28},
+  number={},
+  pages={2319-2332},
+  doi={10.1109/TASLP.2020.3012062}}
+```
